@@ -6,6 +6,8 @@ from geopy.distance import geodesic
 from Download import HDBDataset
 
 class MRTDataset:
+    """Creates the MRT dataset and cleans the dataset 
+    """
     def __init__(self):
         self.mrt_data = self.read_mrt()
     
@@ -16,10 +18,26 @@ class MRTDataset:
     
     @staticmethod
     def parse_mrt_name(stn):
+        """_summary_
+
+        Args:
+            stn (string): 
+
+        Returns:
+            string: mrt name
+        """
         return stn[:-12].lower()
 
 
 class HDBGeo(HDBDataset, MRTDataset):
+    """
+    Combines the HDB dataset with the MRT Dataset
+    Generates the distance to nearest MRT for each transaction
+
+    Args:
+        HDBDataset (_type_): HDB Dataset
+        MRTDataset (_type_): MRT Dataset
+    """
     def __init__(self, download):
         super().__init__(download)
         super(HDBDataset, self).__init__()
@@ -35,17 +53,28 @@ class HDBGeo(HDBDataset, MRTDataset):
             except OSError as e:
                 print(e.errno)
     
-    def get_hdb_geo(self):
+    def get_hdb_geo(self) -> pd.DataFrame:
         geo_data = self.get_geo_info()
         df_output = self.dataset.merge(geo_data,
                                        how='left',
                                        on='address')
         return df_output
     
-    def get_unique_address(self):
+    def get_unique_address(self) -> pd.Series:
+        """_summary_
+
+        Returns:
+            pd.Series: Series of unique addresses (blk + street_name)
+        """
         return self.dataset['address'].unique()
         
-    def get_geo_info(self):
+    def get_geo_info(self) -> pd.DataFrame:
+        """
+        Gets geolocation data from OneMap API
+
+        Returns:
+            pd.DataFrame: DF containing address, lat, long and postal code
+        """
         latitude = []
         longitude = []
         postal_code = []
@@ -72,7 +101,13 @@ class HDBGeo(HDBDataset, MRTDataset):
         df_output.columns = ['address', 'latitude', 'longitude', 'postal_code']
         return df_output
     
-    def get_nearest_mrt(self):
+    def get_nearest_mrt(self) -> pd.DataFrame:
+        """
+        Computes the distance to the nearest MRT station
+
+        Returns:
+            pd.DataFrame: DF containing postal code, mrt stn and distance
+        """
         # Prepare List of HDB Coordinates and MRT Coordinates 
         hdb_postal = self.dataset_geo["postal_code"]
         hdb_lat = self.dataset_geo["latitude"]
@@ -103,7 +138,13 @@ class HDBGeo(HDBDataset, MRTDataset):
         geo_distance = geo_distance.drop_duplicates()
         return geo_distance
     
-    def merge_mrt(self):
+    def merge_mrt(self) -> pd.DataFrame:
+        """
+        Merges HDB data with MRT data via postal code
+
+        Returns:
+            pd.DataFrame: 
+        """
         geo_distance = self.get_nearest_mrt()
         output = self.dataset_geo.merge(geo_distance,
                                         how='left',
