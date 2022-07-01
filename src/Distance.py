@@ -26,6 +26,7 @@ class HDBGeo(HDBDataset, MRTDataset):
         if download:
             self.dataset_geo = self.get_hdb_geo()
             self.dataset_merged = self.merge_mrt()
+            assert len(self.dataset_geo) == len(self.dataset_merged)
             self.dataset_merged.to_csv('data/dataset_merged.csv')
         else:
             try:
@@ -99,6 +100,7 @@ class HDBGeo(HDBDataset, MRTDataset):
         for i in list_of_nearest_distance:
             nearest_mrt.append((i[0], i[1][0], i[1][1], i[2]))
         geo_distance = pd.DataFrame(nearest_mrt, columns=["postal_code", "mrt", "stn_no", "distance_meters"])
+        geo_distance = geo_distance.drop_duplicates()
         return geo_distance
     
     def merge_mrt(self):
